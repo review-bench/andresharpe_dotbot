@@ -806,6 +806,51 @@ function Get-DotbotInstallDir {
     return Get-DotbotInstallPath
 }
 
+function Invoke-PesterRuntime {
+    <#
+    .SYNOPSIS
+    Run the Pester unit-test suite under tests/Pester/runtime and return an exit code.
+
+    .DESCRIPTION
+    Wraps Invoke-Pester so the Run-Tests.ps1 harness can fold the Pester sub-layer
+    into its layer summary. Returns 0 on pass, 1 on fail.
+
+    Behaviour when Pester is missing:
+      - If $env:DOTBOT_REQUIRE_PESTER is set (CI), prints a clear error and returns 1.
+      - Otherwise (local dev), prints a one-line skip notice and returns 0.
+
+    .PARAMETER Path
+    Path to the Pester test root. Defaults to tests/Pester/runtime relative
+    to this helper module.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Path
+    )
+
+    if (-not $Path) {
+        $Path = Join-Path $PSScriptRoot 'Pester' 'runtime'
+    }
+
+    $hasPester = $null -ne (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.5.0' } | Select-Object -First 1)
+    if (-not $hasPester) {
+        if ($env:DOTBOT_REQUIRE_PESTER) {
+            Write-Host "  ✗ Pester 5.5+ is required but not installed (DOTBOT_REQUIRE_PESTER is set)" -ForegroundColor Red
+            Write-Host "  → Install: Install-Module -Name Pester -MinimumVersion 5.5.0 -Scope CurrentUser" -ForegroundColor Yellow
+            return 1
+        }
+        Write-Host "  ○ Pester sub-layer skipped (Pester 5.5+ not installed locally)" -ForegroundColor Yellow
+        Write-Host "    Install for full coverage: Install-Module -Name Pester -MinimumVersion 5.5.0 -Scope CurrentUser" -ForegroundColor DarkGray
+        return 0
+    }
+
+    Import-Module Pester -MinimumVersion 5.5.0 -Force
+    $result = Invoke-Pester -Path $Path -Output Detailed -PassThru
+
+    if ($result.FailedCount -gt 0) { return 1 }
+    return 0
+}
+
 Export-ModuleMember -Function @(
     'Reset-TestResults'
     'Get-TestResults'
@@ -833,4 +878,5 @@ Export-ModuleMember -Function @(
     'Send-McpInitialize'
     'Get-RepoRoot'
     'Get-DotbotInstallDir'
+    'Invoke-PesterRuntime'
 )

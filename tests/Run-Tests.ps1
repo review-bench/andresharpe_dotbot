@@ -5,12 +5,14 @@
 .DESCRIPTION
     Orchestrates test layers 1-5. Use -Layer to select which layers to run.
 .PARAMETER Layer
-    Which layer(s) to run: 1, 2, 3, 4, 5, or 'all' (default: 'all' runs 1-3;
-    use 4 or 5 explicitly).
+    Which layer(s) to run: 1, 2, 3, 4, 5, 'pester', or 'all' (default: 'all'
+    runs 1-3 plus the Pester sub-layer; use 4 or 5 explicitly).
+    'pester' runs only the Pester unit-test suite under tests/Pester/runtime.
 .EXAMPLE
-    ./Run-Tests.ps1                  # Runs layers 1-3
-    ./Run-Tests.ps1 -Layer 1         # Runs layer 1 only
-    ./Run-Tests.ps1 -Layer all       # Runs layers 1-3
+    ./Run-Tests.ps1                  # Runs layers 1-3 (Pester sub-layer included with Layer 1)
+    ./Run-Tests.ps1 -Layer 1         # Runs layer 1 + Pester sub-layer
+    ./Run-Tests.ps1 -Layer pester    # Runs only the Pester unit-test suite
+    ./Run-Tests.ps1 -Layer all       # Runs layers 1-3 + Pester sub-layer
     ./Run-Tests.ps1 -Layer 4         # Runs layer 4 only (requires Claude credentials)
     ./Run-Tests.ps1 -Layer 5         # Runs layer 5 only (Playwright UI E2E)
     ./Run-Tests.ps1 -Layer 1,2,3,4,5 # Runs every layer
@@ -34,17 +36,19 @@ Write-Host ""
 
 # Determine which layers to run
 $layersToRun = @()
+$runPesterSublayer = $false
 foreach ($l in $Layer) {
     switch ($l) {
-        'all'  { $layersToRun += @(1, 2, 3) }
-        '1'    { $layersToRun += 1 }
-        '2'    { $layersToRun += 2 }
-        '3'    { $layersToRun += 3 }
-        '4'    { $layersToRun += 4 }
-        '5'    { $layersToRun += 5 }
+        'all'    { $layersToRun += @(1, 2, 3); $runPesterSublayer = $true }
+        '1'      { $layersToRun += 1; $runPesterSublayer = $true }
+        '2'      { $layersToRun += 2 }
+        '3'      { $layersToRun += 3 }
+        '4'      { $layersToRun += 4 }
+        '5'      { $layersToRun += 5 }
+        'pester' { $runPesterSublayer = $true }
         default {
             Write-Host "  Unknown layer: $l" -ForegroundColor Red
-            Write-Host "  Valid values: 1, 2, 3, 4, 5, all" -ForegroundColor Yellow
+            Write-Host "  Valid values: 1, 2, 3, 4, 5, pester, all" -ForegroundColor Yellow
             exit 1
         }
     }
@@ -52,6 +56,7 @@ foreach ($l in $Layer) {
 $layersToRun = $layersToRun | Sort-Object -Unique
 
 $layerNames = $layersToRun | ForEach-Object { "Layer $_" }
+if ($runPesterSublayer) { $layerNames += 'Pester (runtime)' }
 Write-Host "  Running: $($layerNames -join ', ')" -ForegroundColor Cyan
 Write-Host ""
 
@@ -211,6 +216,27 @@ if (5 -in $layersToRun) {
     if ($exitCode -ne 0) { $overallFailed = $true }
 }
 
+# Pester sub-layer: pure-logic unit tests for src/runtime (Layer 1.P).
+# Runs alongside Layer 1 by default; can be invoked alone via -Layer pester.
+# Skips quietly when Pester is missing locally; mandatory under
+# DOTBOT_REQUIRE_PESTER (set in CI).
+if ($runPesterSublayer) {
+    Write-Host ""
+    Write-Host "--- Layer 1.P: Pester unit tests (src/runtime) ---" -ForegroundColor Cyan
+    Import-Module "$PSScriptRoot\Test-Helpers.psm1" -DisableNameChecking
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $pesterCode = Invoke-PesterRuntime -Path (Join-Path $PSScriptRoot 'Pester' 'runtime')
+    $sw.Stop()
+    if (-not $layerTimings.ContainsKey('pester')) { $layerTimings['pester'] = @() }
+    $layerTimings['pester'] += [pscustomobject]@{
+        File      = 'Pester/runtime'
+        ElapsedMs = $sw.ElapsedMilliseconds
+        ExitCode  = $pesterCode
+    }
+    $layerResults['pester'] = ($pesterCode -eq 0)
+    if ($pesterCode -ne 0) { $overallFailed = $true }
+}
+
 # Overall summary
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Magenta
@@ -231,6 +257,20 @@ foreach ($layer in $layersToRun) {
         foreach ($f in ($files | Sort-Object -Property ElapsedMs -Descending)) {
             $padded = $f.File.PadRight($maxNameLen)
             Write-Host ("            {0}  {1}" -f $padded, (Format-Duration -Ms $f.ElapsedMs)) -ForegroundColor DarkGray
+        }
+    }
+}
+
+if ($runPesterSublayer -and $layerResults.ContainsKey('pester')) {
+    $status = if ($layerResults['pester']) { "✓ PASSED" } else { "✗ FAILED" }
+    $color  = if ($layerResults['pester']) { "Green" } else { "Red" }
+    $files  = $layerTimings['pester']
+    $totalMs = if ($files) { ($files | Measure-Object -Property ElapsedMs -Sum).Sum } else { 0 }
+    Write-Host "  Pester  : $status " -NoNewline -ForegroundColor $color
+    Write-Host ("({0})" -f (Format-Duration -Ms $totalMs)) -ForegroundColor DarkGray
+    if ($files) {
+        foreach ($f in $files) {
+            Write-Host ("            {0}  {1}" -f $f.File, (Format-Duration -Ms $f.ElapsedMs)) -ForegroundColor DarkGray
         }
     }
 }

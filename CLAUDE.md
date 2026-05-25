@@ -110,11 +110,20 @@ Naming: folder=`kebab-case`, YAML name=`snake_case`, function=`Invoke-PascalCase
 | Layer | File | What it tests | Credentials |
 |-------|------|---------------|-------------|
 | 1 | `Test-Structure.ps1` | Dependencies, installation, platform functions | None |
+| 1.P | `Pester/runtime/*.Tests.ps1` | Pester unit tests for pure-logic helpers in `src/runtime/Modules/` (IdGen, transitions, schema validators, settings merge, layout, theme width/padding). Runs automatically with Layer 1; invoke alone via `-Layer pester`. | None |
 | 2 | `Test-Components.ps1` | MCP tools, UI APIs, file structure | None |
 | 3 | `Test-MockClaude.ps1` | Analysis/execution flows with mock Claude CLI | None |
 | 4 | `Test-E2E-Claude.ps1` | Full end-to-end with real Claude API | `ANTHROPIC_API_KEY` |
 
-CI runs layers 1-3 on push/PR across Windows, macOS, Linux. Layer 4 runs on schedule or manual trigger.
+CI runs layers 1-3 (including the Pester sub-layer) on push/PR across Windows, macOS, Linux. Layer 4 runs on schedule or manual trigger.
+
+The Pester sub-layer requires **Pester 5.5+**. CI installs it automatically. Local devs install once:
+
+```powershell
+Install-Module -Name Pester -MinimumVersion 5.5.0 -Scope CurrentUser
+```
+
+If Pester is missing locally, the harness skips the sub-layer with a one-line notice (set `DOTBOT_REQUIRE_PESTER=1` to make it mandatory — CI sets this).
 
 ## Dev Cycle
 
