@@ -492,11 +492,14 @@ function Test-WorkflowManifestSchema {
         if (-not $WorkflowName) { $WorkflowName = '<unknown>' }
     }
 
+    # The requires.* validations and the per-task skip_worktree lint are
+    # independent — short-circuiting on a missing 'requires' block would skip
+    # the task lint, so a manifest with no requires but tasks carrying the
+    # removed skip_worktree field would slip past install-time validation.
     $requires = Get-ManifestEntryField -Entry $Manifest -Field 'requires'
-    if (-not $requires) { return @() }
 
     # env_vars: each entry must have 'var'
-    $envVars = Get-ManifestEntryField -Entry $requires -Field 'env_vars'
+    $envVars = if ($requires) { Get-ManifestEntryField -Entry $requires -Field 'env_vars' } else { $null }
     if ($envVars) {
         $i = 0
         foreach ($ev in @($envVars)) {
@@ -515,7 +518,7 @@ Note: 'var' is the env var identifier (e.g. GITHUB_TOKEN). 'name' is the human-r
     }
 
     # mcp_servers: each entry must have 'name'
-    $mcpServers = Get-ManifestEntryField -Entry $requires -Field 'mcp_servers'
+    $mcpServers = if ($requires) { Get-ManifestEntryField -Entry $requires -Field 'mcp_servers' } else { $null }
     if ($mcpServers) {
         $i = 0
         foreach ($ms in @($mcpServers)) {
@@ -533,7 +536,7 @@ Expected schema: { name: <SERVER NAME>, message: <TEXT>, hint: <TEXT> }
     }
 
     # cli_tools: each entry must have 'name'
-    $cliTools = Get-ManifestEntryField -Entry $requires -Field 'cli_tools'
+    $cliTools = if ($requires) { Get-ManifestEntryField -Entry $requires -Field 'cli_tools' } else { $null }
     if ($cliTools) {
         $i = 0
         foreach ($ct in @($cliTools)) {
