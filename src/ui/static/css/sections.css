@@ -1,0 +1,700 @@
+/* DOTBOT Dashboard - Per-section layouts
+ * Overview, Workflows, Agents, Processes, Tasks, Config
+ */
+
+/* ============================================================
+ * OVERVIEW
+ * ============================================================ */
+.ov-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "stats stats stats"
+        "identity actions activity"
+        "tasks tasks tasks";
+    gap: 16px;
+}
+
+.ov-stats {
+    grid-area: stats;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.ov-identity { grid-area: identity; min-height: 200px; }
+.ov-actions  { grid-area: actions; min-height: 200px; }
+.ov-activity { grid-area: activity; min-height: 200px; }
+.ov-tasks    { grid-area: tasks; }
+
+.ov-actions .panel-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ov-actions .ctrl-btn {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.ov-identity .panel-screen .kv-grid {
+    grid-template-columns: 110px 1fr;
+}
+
+@media (max-width: 1200px) {
+    .ov-stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .ov-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "stats"
+            "identity"
+            "actions"
+            "activity"
+            "tasks";
+    }
+    .ov-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 540px) {
+    .ov-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+ * WORKFLOWS
+ * ============================================================ */
+.workflows-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+}
+
+.workflow-card {
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.15s ease, transform 0.05s ease;
+}
+
+.workflow-card:hover {
+    border-color: var(--primary-30);
+}
+
+.workflow-card-head {
+    padding: 12px 14px;
+    background: var(--bezel-dark);
+    border-bottom: 1px solid var(--bezel-edge);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.workflow-card-glyph {
+    font-size: 14px;
+    color: var(--color-primary);
+    text-shadow: 0 0 6px var(--primary-glow);
+}
+
+.workflow-card-name {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    text-shadow: 0 0 4px var(--primary-glow);
+}
+
+.workflow-card-body {
+    padding: 12px 14px;
+    background: var(--bg-screen);
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 10px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.workflow-card-desc {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-primary-dim);
+    min-height: 32px;
+}
+
+.workflow-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+}
+
+.workflow-card-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--bezel-edge);
+}
+
+.workflow-card-stat {
+    text-align: center;
+}
+
+.workflow-card-stat-value {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--status-color, var(--color-primary));
+    text-shadow: 0 0 4px var(--status-glow, var(--primary-glow));
+}
+
+.workflow-card-stat-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.workflow-card-foot {
+    padding: 10px 14px;
+    background: var(--bezel-dark);
+    border-top: 1px solid var(--bezel-edge);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.workflow-card-version {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-muted);
+    letter-spacing: 0.05em;
+}
+
+.workflow-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* ============================================================
+ * AGENTS
+ * ============================================================ */
+.agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.agent-card {
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.15s ease;
+}
+
+.agent-card:hover {
+    border-color: var(--primary-30);
+}
+
+.agent-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.agent-card-glyph {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary-15);
+    border: 1px solid var(--primary-30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-size: 14px;
+    flex-shrink: 0;
+    text-shadow: 0 0 6px var(--primary-glow);
+}
+
+.agent-card-name {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--color-primary);
+    text-transform: uppercase;
+}
+
+.agent-card-source {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-muted);
+    letter-spacing: 0.05em;
+}
+
+.agent-card-desc {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-primary-dim);
+    flex: 1;
+}
+
+.agent-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--bezel-edge);
+}
+
+/* ============================================================
+ * PROCESSES
+ * ============================================================ */
+.processes-list {
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.process-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 14px;
+    border-left: 3px solid var(--status-color, var(--color-primary-dim));
+    border-radius: 0 3px 3px 0;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.process-row + .process-row { border-top: 1px solid var(--bezel-edge); }
+
+.process-row:hover { background: var(--primary-05); }
+
+.process-row.expanded { background: var(--primary-08); }
+
+.process-row-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--led-off);
+}
+.process-row[data-status="running"] .process-row-led {
+    background: var(--color-success);
+    box-shadow: 0 0 8px var(--success-glow);
+    animation: ledPulse 1.5s ease-in-out infinite;
+}
+.process-row[data-status="completed"] .process-row-led {
+    background: var(--color-success-dim);
+}
+.process-row[data-status="failed"] .process-row-led { background: var(--color-error); }
+.process-row[data-status="killed"] .process-row-led { background: var(--color-error); }
+.process-row[data-status="stopping"] .process-row-led {
+    background: var(--color-warning);
+    animation: ledPulse 0.8s ease-in-out infinite;
+}
+
+.process-row-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.process-row-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.process-row-sub {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-muted);
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.process-row-pid {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-muted);
+}
+
+.process-row-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.process-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.process-row-detail {
+    grid-column: 1 / -1;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px dashed var(--bezel-edge);
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
+.process-row-log {
+    background: var(--bg-deep);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 3px;
+    padding: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    color: var(--color-primary-dim);
+    font-size: 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ============================================================
+ * TASKS
+ * ============================================================ */
+.tasks-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    min-height: 400px;
+}
+
+.tasks-column {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.tasks-column-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bezel-dark);
+    border-bottom: 1px solid var(--bezel-edge);
+}
+
+.tasks-column-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--status-color, var(--color-primary));
+    text-shadow: 0 0 4px var(--status-glow, var(--primary-glow));
+    text-transform: uppercase;
+}
+
+.tasks-column-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-muted);
+}
+
+.tasks-column-body {
+    flex: 1;
+    padding: 8px;
+    background: var(--bg-screen);
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 10px 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: calc(100vh - 320px);
+}
+
+.task-card {
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-left: 3px solid var(--status-color, var(--color-primary));
+    border-radius: 0 3px 3px 0;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.task-card:hover {
+    background: var(--primary-08);
+    border-color: var(--bezel-light);
+    border-left-color: var(--status-color, var(--color-primary));
+}
+
+.task-card-title {
+    font-weight: 600;
+    color: var(--color-primary);
+    line-height: 1.35;
+}
+
+.task-card-id {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--color-muted);
+    letter-spacing: 0.05em;
+}
+
+.task-card-meta {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+@media (max-width: 1100px) {
+    .tasks-board { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .tasks-board { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+ * CONFIG
+ * ============================================================ */
+.config-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.config-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    padding: 8px;
+    position: sticky;
+    top: 0;
+}
+
+.config-nav-item {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 3px;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+}
+
+.config-nav-item:hover {
+    color: var(--color-primary-dim);
+    background: var(--primary-05);
+}
+
+.config-nav-item.active {
+    color: var(--color-primary);
+    background: var(--primary-15);
+    text-shadow: 0 0 5px var(--primary-glow);
+}
+
+.config-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.config-panel {
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.config-panel-head {
+    padding: 10px 14px;
+    background: var(--bezel-dark);
+    border-bottom: 1px solid var(--bezel-edge);
+}
+
+.config-panel-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-primary);
+    text-shadow: 0 0 5px var(--primary-glow);
+    text-transform: uppercase;
+}
+
+.config-panel-screen {
+    background: var(--bg-screen);
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 10px 10px;
+    padding: 14px 16px;
+}
+
+.config-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.config-row + .config-row {
+    border-top: 1px dashed var(--bezel-edge);
+}
+
+.config-row-info { flex: 1; min-width: 0; }
+.config-row-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.05em;
+}
+.config-row-hint {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    color: var(--color-muted);
+    margin-top: 2px;
+    line-height: 1.4;
+}
+.config-row-control {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Theme grid */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.theme-tile {
+    padding: 12px;
+    background: var(--bg-module);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.theme-tile:hover {
+    border-color: var(--primary-30);
+}
+
+.theme-tile.active {
+    border-color: var(--color-primary);
+    background: var(--primary-08);
+}
+
+.theme-tile-swatches {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.theme-tile-swatch {
+    flex: 1;
+    height: 14px;
+    border-radius: 2px;
+    border: 1px solid var(--bezel-edge);
+}
+
+.theme-tile-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--color-primary);
+    text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+    .config-layout {
+        grid-template-columns: 1fr;
+    }
+    .config-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        position: static;
+    }
+}
+
+/* ============================================================
+ * RAW SETTINGS (config -> raw)
+ * ============================================================ */
+.raw-settings {
+    background: var(--bg-deep);
+    border: 1px solid var(--bezel-edge);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--color-primary-dim);
+    white-space: pre;
+    overflow-x: auto;
+    max-height: 600px;
+    overflow-y: auto;
+}

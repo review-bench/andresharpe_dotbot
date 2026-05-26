@@ -1,194 +1,114 @@
-/**
- * DOTBOT Control Panel - Theme System
- * Theme management and CSS variable application
+/* DOTBOT Dashboard - Theme application + picker
+ * Reads /api/theme on boot, applies CSS custom properties.
+ * Provides a theme picker modal triggered by the THEME header button.
+ * Attaches: window.Theme
  */
+(function () {
+    'use strict';
 
-/**
- * Load theme configuration and apply CSS variables
- */
-async function loadTheme() {
-    try {
-        const response = await fetch('/api/theme');
-        if (!response.ok) {
-            console.warn('Failed to load theme, using defaults');
+    let config = null;
+
+    async function load() {
+        try {
+            config = await window.API.themeGet();
+            apply(config);
+        } catch (e) {
+            console.warn('Theme load failed:', e);
+        } finally {
             document.body.classList.add('theme-loaded');
-            return;
         }
-        const config = await response.json();
-        currentTheme = config;
-        applyTheme(config.mappings);
-        document.body.classList.add('theme-loaded');
-    } catch (error) {
-        console.warn('Error loading theme:', error);
-        document.body.classList.add('theme-loaded');
-    }
-}
-
-/**
- * Apply theme mappings to CSS variables
- * @param {Object} mappings - Object with semantic color names and RGB values
- */
-function applyTheme(mappings) {
-    const root = document.documentElement;
-    for (const [name, rgb] of Object.entries(mappings)) {
-        root.style.setProperty(`--color-${name}-rgb`, `${rgb.r} ${rgb.g} ${rgb.b}`);
     }
 
-    // Update ActivityScope colors if it exists
-    if (activityScope && typeof activityScope.updateThemeColors === 'function') {
-        activityScope.updateThemeColors();
-        activityScope.setupStyle();
+    function apply(cfg) {
+        if (!cfg || !cfg.mappings) return;
+        const root = document.documentElement;
+        for (const [name, rgb] of Object.entries(cfg.mappings)) {
+            if (rgb && typeof rgb === 'object') {
+                root.style.setProperty('--color-' + name + '-rgb', rgb.r + ' ' + rgb.g + ' ' + rgb.b);
+            }
+        }
     }
-}
 
-/**
- * Switch to a theme preset
- * @param {string} presetName - Name of the preset (e.g., 'amber', 'green', 'cyan')
- */
-async function setThemePreset(presetName) {
-    try {
-        const response = await fetch('/api/theme', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ preset: presetName })
+    async function setPreset(name) {
+        try {
+            const res = await window.API.themeSet(name);
+            config = res;
+            apply(res);
+            window.UI && window.UI.toast('Theme: ' + (res.name || name), 'success', 1800);
+            renderThemeGrid();
+        } catch (e) {
+            window.UI && window.UI.toast('Theme switch failed: ' + e.message, 'error');
+        }
+    }
+
+    function swatch(rgbObj) {
+        if (!rgbObj) return '#222';
+        return 'rgb(' + rgbObj.r + ',' + rgbObj.g + ',' + rgbObj.b + ')';
+    }
+
+    function presetTile(preset, currentName) {
+        const tile = document.createElement('button');
+        tile.className = 'theme-tile' + (preset.name === currentName ? ' active' : '');
+        tile.addEventListener('click', () => setPreset(preset.id || preset.key || preset.name));
+
+        const swatches = document.createElement('div');
+        swatches.className = 'theme-tile-swatches';
+        const colors = ['primary', 'secondary', 'success', 'error', 'bg-deep'];
+        colors.forEach((k) => {
+            const sw = document.createElement('span');
+            sw.className = 'theme-tile-swatch';
+            sw.style.background = swatch(preset.mappings && preset.mappings[k]);
+            swatches.appendChild(sw);
         });
-        if (!response.ok) {
-            console.error('Failed to set theme preset');
-            return;
-        }
-        const config = await response.json();
-        currentTheme = config;
-        applyTheme(config.mappings);
-    } catch (error) {
-        console.error('Error setting theme preset:', error);
-    }
-}
+        tile.appendChild(swatches);
 
-/**
- * Get available theme presets
- * @returns {Object} Available presets from current theme config
- */
-function getThemePresets() {
-    return currentTheme?.presets || {};
-}
+        const name = document.createElement('div');
+        name.className = 'theme-tile-name';
+        name.textContent = preset.name || preset.id || 'Theme';
+        tile.appendChild(name);
 
-/**
- * Get current theme name
- * @returns {string} Current theme name
- */
-function getCurrentThemeName() {
-    return currentTheme?.name || 'Unknown';
-}
-
-/**
- * Initialize the theme selector UI in settings
- */
-function initThemeSelector() {
-    const themeGrid = document.getElementById('theme-grid');
-
-    if (!themeGrid || !currentTheme) return;
-
-    // Clear existing content
-    themeGrid.innerHTML = '';
-
-    // Get presets from theme config
-    const presets = currentTheme.presets || {};
-
-    // Create theme options
-    for (const [key, preset] of Object.entries(presets)) {
-        const option = document.createElement('div');
-        option.className = 'theme-option';
-        option.dataset.theme = key;
-
-        // Check if this is the active theme
-        if (currentTheme.name === preset.name) {
-            option.classList.add('active');
-        }
-
-        // Get the primary color for preview
-        const [r, g, b] = preset.primary;
-
-        option.innerHTML = `
-            <div class="theme-preview" style="background: rgba(${r}, ${g}, ${b}, 0.1);">
-                <div class="theme-preview-wave" style="background: rgb(${r}, ${g}, ${b}); color: rgb(${r}, ${g}, ${b});"></div>
-            </div>
-            <div class="theme-option-name">${preset.name}</div>
-        `;
-
-        option.addEventListener('click', () => selectTheme(key));
-        themeGrid.appendChild(option);
-    }
-}
-
-/**
- * Select a theme and apply it
- * @param {string} themeKey - The preset key (e.g., 'amber', 'green')
- */
-async function selectTheme(themeKey) {
-    await setThemePreset(themeKey);
-
-    // Update UI to reflect selection
-    const themeGrid = document.getElementById('theme-grid');
-
-    if (themeGrid) {
-        // Update active state
-        themeGrid.querySelectorAll('.theme-option').forEach(opt => {
-            opt.classList.toggle('active', opt.dataset.theme === themeKey);
-        });
+        return tile;
     }
 
-    // Pulse Aether lights to preview new theme color
-    if (typeof Aether !== 'undefined' && Aether.isLinked()) {
-        // Small delay to ensure CSS variables are updated
-        setTimeout(() => {
-            Aether.pulseBright('primary');
-        }, 100);
-    }
-}
+    function openPicker() {
+        if (!window.UI || !config) return;
+        const body = document.createElement('div');
+        const grid = document.createElement('div');
+        grid.className = 'theme-grid';
+        body.appendChild(grid);
 
-/**
- * Initialize settings navigation
- */
-function initSettingsNav() {
-    const navItems = document.querySelectorAll('.settings-nav-item');
-    const sections = document.querySelectorAll('.settings-section');
-
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            const targetSection = item.dataset.settingsSection;
-
-            // Update nav active state
-            navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
-
-            // Show/hide sections
-            sections.forEach(section => {
-                const sectionId = section.id.replace('settings-', '');
-                section.classList.toggle('hidden', sectionId !== targetSection);
+        const presets = config.presets || {};
+        const list = Object.values(presets);
+        if (list.length === 0) {
+            body.innerHTML = '<div class="empty-state">No theme presets available.</div>';
+        } else {
+            list.forEach((p) => {
+                const preset = Object.assign({}, p);
+                if (!preset.id && p.key) preset.id = p.key;
+                grid.appendChild(presetTile(preset, config.name));
             });
+        }
 
-            // Render editor settings from cache; use Rescan button for explicit re-detection
-            if (targetSection === 'editor' && typeof renderEditorSettings === 'function') {
-                if (!editorDetectionDone) {
-                    refreshInstalledEditors(false).then(() => {
-                        renderEditorSettings();
-                        initEditorCustomInput();
-                    });
-                } else {
-                    renderEditorSettings();
-                    initEditorCustomInput();
-                }
-            }
+        window.UI.modal({ title: 'SELECT THEME', body });
+    }
 
-            // Refresh mothership settings when selected
-            if (targetSection === 'mothership' && typeof loadMothershipSettings === 'function') {
-                loadMothershipSettings();
-            }
-
-            // Initialize Aether panel when selected
-            if (targetSection === 'aether' && typeof Aether !== 'undefined') {
-                Aether.initSettingsPanel();
-            }
+    function renderThemeGrid() {
+        const host = document.getElementById('config-panels');
+        if (!host) return;
+        const grid = host.querySelector('.theme-grid[data-managed="true"]');
+        if (!grid || !config) return;
+        grid.innerHTML = '';
+        Object.values(config.presets || {}).forEach((p) => {
+            const preset = Object.assign({}, p);
+            if (!preset.id && p.key) preset.id = p.key;
+            grid.appendChild(presetTile(preset, config.name));
         });
-    });
-}
+    }
+
+    function init() {
+        const btn = document.getElementById('action-theme');
+        if (btn) btn.addEventListener('click', openPicker);
+    }
+
+    window.Theme = { load, setPreset, getConfig: () => config, openPicker, init };
+})();
