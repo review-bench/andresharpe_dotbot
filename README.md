@@ -131,10 +131,10 @@ dotbot init -Workflow myorg:custom-workflow                  # Use from registry
 ### 5. Launch the runtime + UI
 
 ```powershell
-dotbot runtime-start
+dotbot go
 ```
 
-Boots the autonomous runtime and the web dashboard on a random port in the IANA dynamic range (49152–65535). Confirm with `dotbot runtime-status`.
+Boots the autonomous runtime and the web dashboard for the current initialized project. Pass `--open` to open the dashboard in your default browser. Use `dotbot runtime-start` only when you need the low-level runtime without the UI.
 
 ## Screenshots
 
@@ -161,8 +161,8 @@ dotbot registry add <n> <src>  # Add an enterprise extension registry
 dotbot registry update [name]  # Update registry (all or named)
 dotbot registry list           # List registries and available content
 dotbot doctor                  # Run project health checks
-dotbot go                      # Launch the project dashboard
-dotbot runtime-start           # Launch the runtime + UI server
+dotbot go                      # Launch runtime + dashboard for an initialized project
+dotbot runtime-start           # Launch only the low-level runtime
 dotbot runtime-status          # Show runtime PID, URL, active workflow runs
 ```
 
