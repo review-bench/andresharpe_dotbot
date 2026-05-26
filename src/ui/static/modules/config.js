@@ -56,43 +56,42 @@
     /* ---------- THEME ---------- */
     function renderTheme(root) {
         const screen = document.createElement('div');
+        const intro = document.createElement('div');
+        intro.className = 'config-row-hint';
+        intro.style.marginBottom = '4px';
+        intro.textContent = 'Choose the dashboard appearance. Applies instantly and is remembered on this machine.';
+        screen.appendChild(intro);
+
         const grid = document.createElement('div');
         grid.className = 'theme-grid';
         grid.setAttribute('data-managed', 'true');
         screen.appendChild(grid);
 
-        const cfg = window.Theme.getConfig();
-        if (!cfg) {
-            grid.innerHTML = '<div class="loading-state">Loading themes...</div>';
-        } else {
-            const presets = cfg.presets || {};
-            Object.values(presets).forEach((p) => {
-                const preset = Object.assign({}, p);
-                if (!preset.id && p.key) preset.id = p.key;
-                grid.appendChild(themeTile(preset, cfg.name));
-            });
-        }
-        root.appendChild(panel('THEME PRESETS', screen));
+        const variants = (window.Theme.getConfig() || {}).variants || {};
+        const cur = window.Theme.current();
+        Object.values(variants).forEach((v) => grid.appendChild(themeTile(v, cur)));
+
+        root.appendChild(panel('Appearance', screen));
     }
 
-    function themeTile(preset, currentName) {
+    function themeTile(variant, currentId) {
         const tile = document.createElement('button');
-        tile.className = 'theme-tile' + (preset.name === currentName ? ' active' : '');
+        tile.className = 'theme-tile' + (variant.id === currentId ? ' active' : '');
         tile.addEventListener('click', () => {
-            window.Theme.setPreset(preset.id || preset.key || preset.name).then(() => render());
+            window.Theme.setVariant(variant.id);
+            render();
         });
         const sw = document.createElement('div');
         sw.className = 'theme-tile-swatches';
-        ['primary', 'secondary', 'success', 'error', 'bg-deep'].forEach((k) => {
+        (variant.swatches || []).forEach((c) => {
             const s = document.createElement('span');
             s.className = 'theme-tile-swatch';
-            const rgb = preset.mappings && preset.mappings[k];
-            if (rgb) s.style.background = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
+            s.style.background = c;
             sw.appendChild(s);
         });
         const name = document.createElement('div');
         name.className = 'theme-tile-name';
-        name.textContent = preset.name || preset.id;
+        name.textContent = variant.name || variant.id;
         tile.appendChild(sw);
         tile.appendChild(name);
         return tile;

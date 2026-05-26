@@ -1,52 +1,19 @@
 /* DOTBOT — base styles
- * Fonts, reset, body, scrollbar, toast.
- * Editorial dark: Fraunces (serif display) + Geist (sans body) + Geist Mono (data).
+ * Fonts, reset, body, scrollbar, toast. Theme-flipping via semantic tokens.
+ * Fraunces (serif display) + Geist (sans body) + Geist Mono (data).
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
 :root {
-    /* Background tokens (resolved from theme.css) */
-    --bg-deep:   rgb(var(--color-bg-deep-rgb));
-    --bg-panel:  rgb(var(--color-bg-panel-rgb));
-    --bg-module: rgb(var(--color-bg-module-rgb));
-    --bg-screen: rgb(var(--color-bg-screen-rgb));
-    --bg-overlay-soft:  rgb(0 0 0 / 0.20);
-    --bg-overlay-med:   rgb(0 0 0 / 0.35);
-    --bg-overlay-heavy: rgb(0 0 0 / 0.55);
-    --bg-black-overlay-heavy: var(--bg-overlay-heavy);
-
-    /* Borders / dividers */
-    --bezel-edge:  rgb(var(--color-bezel-rgb));
-    --bezel-light: color-mix(in srgb, rgb(var(--color-bezel-rgb)) 65%, transparent);
-    --bezel-dark:  color-mix(in srgb, rgb(var(--color-bezel-rgb)) 45%, black);
-    --led-off:     rgb(50 44 38);
-    --hairline:    rgb(255 255 255 / 0.06);
-    --white-20:    rgb(255 255 255 / 0.18);
-
-    /* Type system */
-    --font-display: 'Fraunces', 'Iowan Old Style', 'Apple Garamond', Georgia, serif;
-    --font-ui:      'Geist', 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono:    'Geist Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-
-    /* Radii */
-    --r-xs: 4px;
-    --r-sm: 6px;
-    --r-md: 10px;
-    --r-lg: 14px;
-    --r-pill: 999px;
-
-    /* Easings */
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --font-ui:      'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 *:focus { outline: none; }
-*:focus-visible {
-    outline: 1.5px solid var(--color-primary);
-    outline-offset: 2px;
-}
+*:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 3px; }
 
 html, body { height: 100%; }
 
@@ -55,85 +22,70 @@ body {
     font-size: 14px;
     font-weight: 400;
     line-height: 1.55;
-    color: rgb(245 237 224);
-    background: var(--bg-deep);
+    color: var(--text);
+    background: var(--surface-page);
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'ss01' 1, 'cv11' 1;
+    transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out);
 }
 
-/* Subtle warm gradient on the page background — atmosphere, not noise */
+/* Atmospheric wash — soft, warm, behind everything */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(1200px 800px at 90% -10%, rgb(var(--color-primary-rgb) / 0.045), transparent 60%),
-        radial-gradient(900px 700px at -10% 110%, rgb(var(--color-secondary-rgb) / 0.035), transparent 60%);
+        radial-gradient(1100px 760px at 88% -8%, var(--wash-a), transparent 55%),
+        radial-gradient(900px 680px at -8% 108%, var(--wash-b), transparent 55%);
     pointer-events: none;
     z-index: 0;
 }
 
-/* ────────── Scrollbar ────────── */
-::-webkit-scrollbar { width: 10px; height: 10px; }
+/* ───────────── Scrollbar ───────────── */
+::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: rgb(var(--color-primary-rgb) / 0.15);
+    background: rgb(var(--color-primary-rgb) / 0.22);
     border-radius: var(--r-pill);
-    border: 2px solid transparent;
+    border: 3px solid transparent;
     background-clip: padding-box;
     transition: background 0.15s var(--ease-out);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--color-primary-rgb) / 0.3);
+    background: rgb(var(--color-primary-rgb) / 0.4);
     background-clip: padding-box;
 }
 
-/* ────────── Loading / empty states ────────── */
-.loading-state,
-.empty-state {
-    padding: 28px 24px;
+/* ───────────── States ───────────── */
+.loading-state, .empty-state {
+    padding: 32px 24px;
     text-align: center;
-    color: var(--color-muted);
-    font-family: var(--font-ui);
-    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 15px;
     font-style: italic;
-    letter-spacing: 0;
+    font-weight: 400;
 }
-
-.loading-state {
-    color: rgb(var(--color-primary-rgb) / 0.7);
-    animation: softPulse 1.4s ease-in-out infinite;
-}
-
+.loading-state { color: var(--color-primary); animation: softPulse 1.4s ease-in-out infinite; }
 .error-state { color: var(--color-error); font-style: normal; }
-
 .hidden { display: none !important; }
 
-@keyframes softPulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.5; }
-}
+@keyframes softPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.5; }
-}
-
-/* CRT loading helpers are obsolete — keep stubs so old call-sites don't break */
-.crt-loading { padding: 60px 20px; text-align: center; color: var(--color-muted); font-family: var(--font-ui); font-style: italic; }
-.crt-loading-text { font-family: var(--font-display); font-size: 16px; font-style: italic; letter-spacing: 0.02em; }
+/* Obsolete CRT loading helpers — harmless stubs */
+.crt-loading { padding: 60px 20px; text-align: center; color: var(--text-muted); font-family: var(--font-display); font-style: italic; }
+.crt-loading-text { font-family: var(--font-display); font-size: 16px; font-style: italic; }
 .crt-loading-dots::after { content: '.'; animation: softPulse 1.4s ease-in-out infinite; }
-.crt-loading-bar { display: none; }
-.crt-loading-mini { padding: 16px; text-align: center; color: var(--color-muted); font-style: italic; }
+.crt-loading-bar, .crt-loading-mini { display: none; }
 
-/* ────────── Toast ────────── */
+/* ───────────── Toast ───────────── */
 .toast-container {
     position: fixed;
-    top: 24px;
-    right: 24px;
+    top: 24px; right: 24px;
     z-index: 9000;
     display: flex;
     flex-direction: column;
@@ -148,21 +100,18 @@ body::before {
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
-    background: rgb(var(--color-bg-panel-rgb) / 0.95);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid var(--hairline);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: var(--r-md);
     box-shadow: var(--shadow-lg);
     font-family: var(--font-ui);
     font-size: 13px;
     line-height: 1.5;
-    color: rgb(245 237 224);
+    color: var(--text);
     transform: translateX(calc(100% + 24px));
     opacity: 0;
-    transition: transform 0.32s var(--ease-out), opacity 0.32s var(--ease-out);
+    transition: transform 0.34s var(--ease-out), opacity 0.34s var(--ease-out);
 }
-
 .toast.visible { transform: translateX(0); opacity: 1; }
 .toast.dismissing { transform: translateX(calc(100% + 24px)); opacity: 0; }
 
@@ -184,27 +133,21 @@ body::before {
     font-family: var(--font-display);
     font-style: italic;
     font-size: 16px;
-    line-height: 1;
+    line-height: 1.3;
     color: var(--color-primary);
-    padding-top: 1px;
 }
 .toast[data-type="error"]   .toast-icon { color: var(--color-error); }
 .toast[data-type="success"] .toast-icon { color: var(--color-success); }
 .toast[data-type="warning"] .toast-icon { color: var(--color-warning); }
 .toast[data-type="info"]    .toast-icon { color: var(--color-info); }
 
-.toast-message {
-    flex: 1;
-    min-width: 0;
-    word-break: break-word;
-    white-space: pre-line;
-}
+.toast-message { flex: 1; min-width: 0; word-break: break-word; white-space: pre-line; }
 
 .toast-close {
     flex-shrink: 0;
     background: none;
     border: none;
-    color: var(--color-muted);
+    color: var(--text-muted);
     opacity: 0.6;
     cursor: pointer;
     font-size: 16px;
@@ -213,12 +156,10 @@ body::before {
     font-family: var(--font-ui);
     transition: opacity 0.15s var(--ease-out), color 0.15s var(--ease-out);
 }
-.toast-close:hover { opacity: 1; color: rgb(245 237 224); }
+.toast-close:hover { opacity: 1; color: var(--text); }
 
-/* Reusable text utilities */
+/* Utilities */
 .serif { font-family: var(--font-display); }
 .mono  { font-family: var(--font-mono); font-feature-settings: 'tnum' 1; }
 .italic { font-style: italic; }
-
-/* Phosphor-glow class kept for back-compat but a no-op in editorial mode */
 .phosphor-glow { text-shadow: none; }

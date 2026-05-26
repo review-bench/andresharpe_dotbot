@@ -1,108 +1,82 @@
-/* DOTBOT Dashboard - Theme application + picker
- * Reads /api/theme on boot, applies CSS custom properties.
- * Provides a theme picker modal triggered by the THEME header button.
+/* DOTBOT Dashboard - Theme (light / dark)
+ * The palette lives entirely in theme.css. This module only chooses between
+ * the "Studio Light" and "Studio Dark" variants via html[data-theme], and
+ * persists the choice. It no longer applies /api/theme presets (those were
+ * the legacy CRT palettes and would clobber the editorial design).
  * Attaches: window.Theme
  */
 (function () {
     'use strict';
 
-    let config = null;
+    const STORAGE_KEY = 'dotbot:dashboard:theme';
+    const VARIANTS = {
+        light: { id: 'light', name: 'Studio Light', swatches: ['#1d6b64', '#c2643a', '#4f7a3f', '#b23a28', '#f1ebdf'] },
+        dark:  { id: 'dark',  name: 'Studio Dark',  swatches: ['#5ab2a7', '#d88a5c', '#84b26e', '#de6e58', '#17140f'] },
+    };
+
+    function current() {
+        return document.documentElement.getAttribute('data-theme') || 'light';
+    }
+
+    function applyVariant(id) {
+        if (id === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+        try { localStorage.setItem(STORAGE_KEY, id); } catch (e) { /* ignore */ }
+    }
 
     async function load() {
-        try {
-            config = await window.API.themeGet();
-            apply(config);
-        } catch (e) {
-            console.warn('Theme load failed:', e);
-        } finally {
-            document.body.classList.add('theme-loaded');
-        }
+        let stored = 'light';
+        try { stored = localStorage.getItem(STORAGE_KEY) || 'light'; } catch (e) { /* ignore */ }
+        applyVariant(stored);
+        document.body.classList.add('theme-loaded');
     }
 
-    function apply(cfg) {
-        if (!cfg || !cfg.mappings) return;
-        const root = document.documentElement;
-        for (const [name, rgb] of Object.entries(cfg.mappings)) {
-            if (rgb && typeof rgb === 'object') {
-                root.style.setProperty('--color-' + name + '-rgb', rgb.r + ' ' + rgb.g + ' ' + rgb.b);
-            }
-        }
+    function setVariant(id) {
+        applyVariant(id);
+        renderGrid();
+        window.UI && window.UI.toast('Theme: ' + (VARIANTS[id] ? VARIANTS[id].name : id), 'success', 1600);
     }
 
-    async function setPreset(name) {
-        try {
-            const res = await window.API.themeSet(name);
-            config = res;
-            apply(res);
-            window.UI && window.UI.toast('Theme: ' + (res.name || name), 'success', 1800);
-            renderThemeGrid();
-        } catch (e) {
-            window.UI && window.UI.toast('Theme switch failed: ' + e.message, 'error');
-        }
-    }
+    function tile(variant) {
+        const t = document.createElement('button');
+        t.className = 'theme-tile' + (variant.id === current() ? ' active' : '');
+        t.addEventListener('click', () => setVariant(variant.id));
 
-    function swatch(rgbObj) {
-        if (!rgbObj) return '#222';
-        return 'rgb(' + rgbObj.r + ',' + rgbObj.g + ',' + rgbObj.b + ')';
-    }
-
-    function presetTile(preset, currentName) {
-        const tile = document.createElement('button');
-        tile.className = 'theme-tile' + (preset.name === currentName ? ' active' : '');
-        tile.addEventListener('click', () => setPreset(preset.id || preset.key || preset.name));
-
-        const swatches = document.createElement('div');
-        swatches.className = 'theme-tile-swatches';
-        const colors = ['primary', 'secondary', 'success', 'error', 'bg-deep'];
-        colors.forEach((k) => {
-            const sw = document.createElement('span');
-            sw.className = 'theme-tile-swatch';
-            sw.style.background = swatch(preset.mappings && preset.mappings[k]);
-            swatches.appendChild(sw);
+        const sw = document.createElement('div');
+        sw.className = 'theme-tile-swatches';
+        variant.swatches.forEach((c) => {
+            const s = document.createElement('span');
+            s.className = 'theme-tile-swatch';
+            s.style.background = c;
+            sw.appendChild(s);
         });
-        tile.appendChild(swatches);
-
         const name = document.createElement('div');
         name.className = 'theme-tile-name';
-        name.textContent = preset.name || preset.id || 'Theme';
-        tile.appendChild(name);
-
-        return tile;
+        name.textContent = variant.name;
+        t.appendChild(sw);
+        t.appendChild(name);
+        return t;
     }
 
     function openPicker() {
-        if (!window.UI || !config) return;
+        if (!window.UI) return;
         const body = document.createElement('div');
         const grid = document.createElement('div');
         grid.className = 'theme-grid';
+        Object.values(VARIANTS).forEach((v) => grid.appendChild(tile(v)));
         body.appendChild(grid);
-
-        const presets = config.presets || {};
-        const list = Object.values(presets);
-        if (list.length === 0) {
-            body.innerHTML = '<div class="empty-state">No theme presets available.</div>';
-        } else {
-            list.forEach((p) => {
-                const preset = Object.assign({}, p);
-                if (!preset.id && p.key) preset.id = p.key;
-                grid.appendChild(presetTile(preset, config.name));
-            });
-        }
-
-        window.UI.modal({ title: 'SELECT THEME', body });
+        window.UI.modal({ title: 'Appearance', body });
     }
 
-    function renderThemeGrid() {
-        const host = document.getElementById('config-panels');
-        if (!host) return;
-        const grid = host.querySelector('.theme-grid[data-managed="true"]');
-        if (!grid || !config) return;
+    function renderGrid() {
+        const grid = document.querySelector('.theme-grid[data-managed="true"]');
+        if (!grid) return;
         grid.innerHTML = '';
-        Object.values(config.presets || {}).forEach((p) => {
-            const preset = Object.assign({}, p);
-            if (!preset.id && p.key) preset.id = p.key;
-            grid.appendChild(presetTile(preset, config.name));
-        });
+        Object.values(VARIANTS).forEach((v) => grid.appendChild(tile(v)));
+    }
+
+    function toggle() {
+        setVariant(current() === 'dark' ? 'light' : 'dark');
     }
 
     function init() {
@@ -110,5 +84,10 @@
         if (btn) btn.addEventListener('click', openPicker);
     }
 
-    window.Theme = { load, setPreset, getConfig: () => config, openPicker, init };
+    // Back-compat: config.js calls Theme.getConfig() for the theme panel.
+    function getConfig() {
+        return { name: VARIANTS[current()].name, variants: VARIANTS };
+    }
+
+    window.Theme = { load, init, openPicker, toggle, setVariant, current, getConfig, renderGrid, VARIANTS };
 })();
