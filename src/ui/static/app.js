@@ -121,7 +121,9 @@
         window.Workflows.init();
         window.Agents.init();
         window.Processes.init();
-        window.Tasks.init();
+        window.Roadmap.init();
+        if (window.Decisions) window.Decisions.init();
+        if (window.Product) window.Product.init();
         window.Config.init();
 
         // Initial data

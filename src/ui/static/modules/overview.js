@@ -137,7 +137,7 @@
                     '<span class="data-row-meta">' +
                         (it.workflow ? '<span class="badge" data-type="tertiary">' + window.UI.escapeHtml(it.workflow) + '</span>' : '') +
                     '</span>';
-                row.addEventListener('click', () => window.Router.go('tasks'));
+                row.addEventListener('click', () => window.Router.go('roadmap'));
                 body.appendChild(row);
             });
         };
@@ -157,8 +157,8 @@
             if (a === 'run-workflow') {
                 window.Router.go('workflows');
             } else if (a === 'new-task') {
-                if (window.Tasks && window.Tasks.openCreateModal) window.Tasks.openCreateModal();
-                else window.Router.go('tasks');
+                if (window.Roadmap && window.Roadmap.openCreateModal) window.Roadmap.openCreateModal();
+                else window.Router.go('roadmap');
             } else if (a === 'commit') {
                 try {
                     await window.API.gitCommit();
@@ -184,6 +184,77 @@
         renderTasks();
     }
 
+    /* ---------- Activity scope ---------- */
+    let scopePosition = 0;
+    let scopeTimer = null;
+    const scopeBuffer = [];
+
+    function renderScope() {
+        const evRoot = document.getElementById('ov-scope-events');
+        const textRoot = document.getElementById('ov-scope-text');
+        const toolPill = document.getElementById('ov-scope-tool');
+        if (!evRoot || !textRoot || !toolPill) return;
+
+        if (scopeBuffer.length === 0) {
+            textRoot.textContent = 'Waiting for activity...';
+            toolPill.textContent = 'IDLE';
+            toolPill.classList.remove('active');
+            evRoot.innerHTML = '';
+            return;
+        }
+
+        const latest = scopeBuffer[0];
+        textRoot.textContent = latest.message || latest.text || '(no message)';
+        const tool = latest.tool || latest.toolName || latest.type || '';
+        if (tool) {
+            toolPill.textContent = String(tool).toUpperCase();
+            toolPill.classList.add('active');
+        } else {
+            toolPill.textContent = 'IDLE';
+            toolPill.classList.remove('active');
+        }
+
+        evRoot.innerHTML = '';
+        scopeBuffer.slice(0, 6).forEach((ev) => {
+            const row = document.createElement('div');
+            row.className = 'ov-scope-event';
+            row.innerHTML =
+                '<span class="ov-scope-event-time">' + window.UI.escapeHtml(fmtTimeOnly(ev.timestamp || ev.time)) + '</span>' +
+                '<span class="ov-scope-event-tool">' + window.UI.escapeHtml(String(ev.tool || ev.type || '--').slice(0, 10)) + '</span>' +
+                '<span class="ov-scope-event-msg">' + window.UI.escapeHtml(window.UI.truncate(ev.message || ev.text || '', 120)) + '</span>';
+            evRoot.appendChild(row);
+        });
+    }
+
+    function fmtTimeOnly(ts) {
+        if (!ts) return '--:--:--';
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '--:--:--';
+        const p = (n) => String(n).padStart(2, '0');
+        return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    }
+
+    async function tickScope() {
+        try {
+            const res = await window.API.get('/api/activity/tail' + (scopePosition ? '?position=' + scopePosition : ''));
+            const events = (res && res.events) || (res && res.lines) || [];
+            if (Array.isArray(events) && events.length) {
+                events.forEach((e) => scopeBuffer.unshift(typeof e === 'string' ? { message: e } : e));
+                while (scopeBuffer.length > 20) scopeBuffer.pop();
+                scopePosition = (res && res.position) || (scopePosition + events.length);
+                renderScope();
+            }
+        } catch (err) {
+            // /api/activity/tail may not be available — fall back to idle silently.
+        }
+    }
+
+    function startScope() {
+        if (scopeTimer) clearInterval(scopeTimer);
+        tickScope();
+        scopeTimer = setInterval(tickScope, 2000);
+    }
+
     function init() {
         wireActions();
         window.Store.subscribe('state', render);
@@ -191,6 +262,8 @@
         window.Store.subscribe('processes', renderActive);
         window.Store.subscribe('git', renderIdentity);
         render();
+        startScope();
+        renderScope();
     }
 
     window.Overview = { init, render };

@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const SECTIONS = ['overview', 'workflows', 'agents', 'processes', 'tasks', 'config'];
+    const SECTIONS = ['overview', 'workflows', 'agents', 'processes', 'roadmap', 'decisions', 'product', 'config'];
     const listeners = new Set();
 
     function currentSection() {

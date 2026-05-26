@@ -95,10 +95,20 @@
                 <span class="section-tab-label">PROCESSES</span>
                 <span class="section-tab-badge" id="badge-processes">0</span>
             </button>
-            <button class="section-tab" data-section="tasks">
-                <span class="section-tab-glyph">&#9633;</span>
-                <span class="section-tab-label">TASKS</span>
-                <span class="section-tab-badge" id="badge-tasks">0</span>
+            <button class="section-tab" data-section="roadmap">
+                <span class="section-tab-glyph">&#9657;</span>
+                <span class="section-tab-label">ROADMAP</span>
+                <span class="section-tab-badge" id="badge-roadmap">0</span>
+            </button>
+            <button class="section-tab" data-section="decisions">
+                <span class="section-tab-glyph">&#9669;</span>
+                <span class="section-tab-label">DECISIONS</span>
+                <span class="section-tab-badge" id="badge-decisions">0</span>
+            </button>
+            <button class="section-tab" data-section="product">
+                <span class="section-tab-glyph">&#9743;</span>
+                <span class="section-tab-label">PRODUCT</span>
+                <span class="section-tab-badge" id="badge-product">0</span>
             </button>
             <button class="section-tab" data-section="config">
                 <span class="section-tab-glyph">&#9881;</span>
@@ -114,6 +124,19 @@
                 <div class="ov-grid">
                     <div class="ov-stats" id="ov-stats">
                         <!-- Stat cards populated by JS -->
+                    </div>
+                    <div class="ov-scope panel">
+                        <div class="panel-head">
+                            <span class="panel-title">&#9672; LIVE ACTIVITY</span>
+                            <span class="ov-scope-tool" id="ov-scope-tool">IDLE</span>
+                        </div>
+                        <div class="panel-screen ov-scope-screen">
+                            <div class="ov-scope-overlay">
+                                <div class="ov-scope-text" id="ov-scope-text">Waiting for activity...</div>
+                                <div class="ov-scope-events" id="ov-scope-events"></div>
+                            </div>
+                            <div class="ov-scope-scanlines"></div>
+                        </div>
                     </div>
                     <div class="ov-identity panel">
                         <div class="panel-head">
@@ -192,26 +215,55 @@
                 </div>
             </section>
 
-            <!-- Tasks -->
-            <section class="dash-section" id="section-tasks">
+            <!-- Decisions -->
+            <section class="dash-section" id="section-decisions">
                 <div class="section-toolbar">
-                    <span class="section-toolbar-title">RUNTIME TASKS</span>
+                    <span class="section-toolbar-title">DECISION RECORDS</span>
                     <div class="toolbar-controls">
-                        <select class="filter-select" id="tasks-workflow-filter">
-                            <option value="">All workflows</option>
-                        </select>
                         <div class="filter-row">
-                            <button class="filter-chip active" data-tfilter="all">ALL</button>
-                            <button class="filter-chip" data-tfilter="todo">TODO</button>
-                            <button class="filter-chip" data-tfilter="in-progress">ACTIVE</button>
-                            <button class="filter-chip" data-tfilter="needs-input">INPUT</button>
-                            <button class="filter-chip" data-tfilter="done">DONE</button>
+                            <button class="filter-chip active" data-dfilter="all">ALL</button>
+                            <button class="filter-chip" data-dfilter="proposed">PROPOSED</button>
+                            <button class="filter-chip" data-dfilter="accepted">ACCEPTED</button>
+                            <button class="filter-chip" data-dfilter="deprecated">DEPRECATED</button>
+                            <button class="filter-chip" data-dfilter="superseded">SUPERSEDED</button>
                         </div>
-                        <button class="ctrl-btn-sm primary" id="tasks-new-btn">+ NEW TASK</button>
+                        <button class="ctrl-btn-sm primary" id="decision-new-btn">+ NEW DECISION</button>
                     </div>
                 </div>
-                <div class="tasks-board" id="tasks-board">
-                    <div class="loading-state">Loading tasks...</div>
+                <div class="decisions-list" id="decisions-list">
+                    <div class="loading-state">Loading decisions...</div>
+                </div>
+            </section>
+
+            <!-- Product docs -->
+            <section class="dash-section" id="section-product">
+                <div class="section-toolbar">
+                    <span class="section-toolbar-title">PRODUCT DOCUMENTS</span>
+                </div>
+                <div class="product-layout">
+                    <nav class="product-nav" id="product-nav">
+                        <div class="loading-state">Loading...</div>
+                    </nav>
+                    <div class="product-viewer-pane" id="product-viewer">
+                        <div class="empty-state">Select a document from the left.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Roadmap -->
+            <section class="dash-section" id="section-roadmap">
+                <div class="section-toolbar">
+                    <span class="section-toolbar-title">TASK ROADMAP</span>
+                    <div class="toolbar-controls">
+                        <select class="filter-select" id="roadmap-workflow-filter">
+                            <option value="">All workflows</option>
+                        </select>
+                        <button class="ctrl-btn-sm" id="roadmap-deleted-btn" title="View deleted task archive">DELETED</button>
+                        <button class="ctrl-btn-sm primary" id="roadmap-new-btn">+ NEW TASK</button>
+                    </div>
+                </div>
+                <div class="roadmap-pipeline" id="roadmap-pipeline">
+                    <div class="loading-state">Loading roadmap...</div>
                 </div>
             </section>
 
@@ -273,7 +325,9 @@
     <script src="modules/workflows.js"></script>
     <script src="modules/agents.js"></script>
     <script src="modules/processes.js"></script>
-    <script src="modules/tasks.js"></script>
+    <script src="modules/roadmap.js"></script>
+    <script src="modules/decisions.js"></script>
+    <script src="modules/product.js"></script>
     <script src="modules/config.js"></script>
     <script src="app.js"></script>
 </body>
